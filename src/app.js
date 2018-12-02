@@ -66,19 +66,18 @@ function Game() {
             this.LoadRoom();
             console.log(self, "Is starting");
         },
-        LoadRoom() {
+        LoadRoom(room = self.State.startRoom) {
             let objects;
-            self.State.room = self.Source.Rooms[self.State.startRoom];
-
+            self.State.room = self.Source.Rooms[room];
+            objects = self.State.room.objects;
             
 
-            // for (let i = 0; i < objects.length; i++) {
-            //     self.State.roomObjects.push(self.Source.Objects[objects[i]]);
-            // }
-            console.log(self.Source.Rooms, self.State.room);
+            for (let i = 0; i < objects.length; i++) {
+                self.State.roomObjects.push(self.Source.Objects[objects[i]]);
+            }
+            this.Log(self.State.room.desc);
         },
         Log(msg){
-            
         }
     }
 }
@@ -89,7 +88,7 @@ var template = () => {
     let utils = g.Source._utils;
     utils.CreateAction("Touch", "You touch", null);
     utils.CreateObject("Lamp", "A lamp", ["Touch"]);
-    utils.CreateRoom("Lobby", "A hotel lobby stretches before you", ["Lampz"], null);
+    utils.CreateRoom("Lobby", "A hotel lobby stretches before you", ["Lamp"], null);
 };
 
 g.Engine.Start(template);
