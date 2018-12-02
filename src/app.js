@@ -5,52 +5,54 @@ function Game() {
         console.log(msg);
     };
     
-    self.Validate = (args, caller) => {
+    self.Validate = (args, utility, source, items) => {
+        let valid = true;
         //shared validations
         if (args.length < args.callee.length){
-            console.log("Incorrect number of arguements for ", caller);
-            return;
+            self.Debug("Incorrect number of arguments for creation of " + utility);
+            valid = false;
         }
+
+        if (items != null && items.length) {
+            for (let i = 0; i < items.length; i++) {
+                if (!source.hasOwnProperty(items[i])){
+                    //doesn't exist
+                    self.Debug("The "+ utility + ": " + items[i] + " doesn't exist");
+                    valid = false;
+                }
+            }
+        }
+
+        return valid;
     }
 
     self.Source = {
         _utils: {
             CreateObject(name, desc, actions) {
-                self.Validate(arguments, this);
-                if (actions.length) {
-                    for (action in actions) {
-                        if (!self.Source.Objects.hasOwnProperty(actions[action])){
-                            self.Debug("This action doesn't exist");
-                        }
-                    }
-                }else {
-                    console.log("Please provide an array of actions");
+                if (self.Validate(arguments, "Action", self.Source.Actions, actions) == true) {
+                    self.Source.Objects[name] = {text: name, desc: desc, actions: actions};
                 }
-                self.Source.Objects[name] = {text: name, desc: desc, actions: actions};
             },
             CreateAction(name, desc, effect) {
                 //needs validations
-                self.Validate(arguments, this);
-                self.Source.Actions[name] = {text: name,desc: desc, effect: effect};
+                if (self.Validate(arguments, "Effect", self.Source.Effects, effect) == true) {
+                    self.Source.Actions[name] = {text: name,desc: desc, effect: effect};
+                }
             },
             CreateRoom(name, desc, objects, nextRooms) {
-                return {
-                    Room: {
-                        name: name,
-                        desc: desc,
-                        objects: objects, //grab from source.objects - obj must exist already to ref it
-                        nextRooms: nextRooms //grab from state.rooms
-                    }
+                if (self.Validate(arguments, "Object", self.Source.Objects, objects) == true) {
+                    self.Source.Rooms.push({name: name,desc: desc, objects: objects, nextRooms: nextRooms});
                 }
             }
         },
         Objects: {},
         Actions: {},
         Effects: {},
-        Rooms: {}
+        Rooms: []
     };
 
     self.State = {
+        startRoom: 0,
         hp: 100,
         xp: 0,
         log: [],
@@ -61,7 +63,22 @@ function Game() {
     self.Engine = {
         Start(creation) {
             creation();
+            this.LoadRoom();
             console.log(self, "Is starting");
+        },
+        LoadRoom() {
+            let objects;
+            self.State.room = self.Source.Rooms[self.State.startRoom];
+
+            
+
+            // for (let i = 0; i < objects.length; i++) {
+            //     self.State.roomObjects.push(self.Source.Objects[objects[i]]);
+            // }
+            console.log(self.Source.Rooms, self.State.room);
+        },
+        Log(msg){
+            
         }
     }
 }
@@ -70,8 +87,9 @@ var g = new Game();
 
 var template = () => {
     let utils = g.Source._utils;
-    utils.CreateAction("Hit");
-    utils.CreateObject("Lamp", "A lamp", ["Hitz"]);
+    utils.CreateAction("Touch", "You touch", null);
+    utils.CreateObject("Lamp", "A lamp", ["Touch"]);
+    utils.CreateRoom("Lobby", "A hotel lobby stretches before you", ["Lampz"], null);
 };
 
 g.Engine.Start(template);
