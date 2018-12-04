@@ -2,6 +2,7 @@ function Game() {
     var self = this;
 
     self.Debug = (msg) => {
+        let args = [...arguments];
         console.log(msg);
     };
     
@@ -9,7 +10,7 @@ function Game() {
         let valid = true;
         //shared validations
         if (args.length < args.callee.length){
-            self.Debug("Incorrect number of arguments for creation of " + utility);
+            self.Debug("Incorrect number of arguments for creation of an Object, Room, or Action");
             valid = false;
         }
 
@@ -57,27 +58,75 @@ function Game() {
         xp: 0,
         log: [],
         room: null,
-        roomObjects: []
+        roomObjects: [],
+        screen: null
     };
 
     self.Engine = {
-        Start(creation) {
+        Start(creation) 
+        {
             creation();
             this.LoadRoom();
-            console.log(self, "Is starting");
+            self.Debug(self, "Is starting");
+            this.LoadScreen();
         },
-        LoadRoom(room = self.State.startRoom) {
+        LoadRoom(room = self.State.startRoom) 
+        {
             let objects;
             self.State.room = self.Source.Rooms[room];
+            self.State.roomObjects = [];
             objects = self.State.room.objects;
-            
-
-            for (let i = 0; i < objects.length; i++) {
-                self.State.roomObjects.push(self.Source.Objects[objects[i]]);
+            self.Debug(objects);
+            if (objects != undefined)
+            {
+                for (let i = 0; i < objects.length; i++) 
+                {
+                self.State.roomObjects.push(self.Source.Objects[objects]);
+                self.Debug(self.State.roomObjects);
+                }
             }
-            this.Log(self.State.room.desc);
+            
         },
-        Log(msg){
+        LoadScreen()
+        {
+            let screen = document.getElementById("window");
+
+            if (screen == null) 
+            {
+                setTimeout(()=>this.LoadScreen(), 100);
+            }
+            else
+            {
+                self.State.screen = screen;
+                self.Debug("screen loaded");
+                this.Log("<p>"
+                    + self.State.log.length
+                    + ": "
+                    + self.State.room.desc
+                    + "<br />"+"You see a " 
+                    + self.State.roomObjects.join(",") 
+                    + " nearby"+"</p>"
+                );
+                this.LoadControls();
+            }
+        },
+        LoadControls()
+        {
+            let rooms = self.State.room.nextRooms;
+            self.Debug(rooms);
+            document.getElementById("up").addEventListener("click", ()=>{
+                nextRoom = self.Source.Rooms.findIndex((room)=>room.name == rooms[0]);
+                this.LoadRoom(nextRoom);
+                this.LoadScreen();
+            });
+        },
+        Log(msg)
+        {
+            self.State.log.push(msg);
+            let log = self.State.log.reverse();
+            self.State.screen.innerHTML = "";
+            self.State.screen.innerHTML = log.join("");
+            self.Debug(self.State.log);
         }
     }
 }
@@ -88,7 +137,8 @@ var template = () => {
     let utils = g.Source._utils;
     utils.CreateAction("Touch", "You touch", null);
     utils.CreateObject("Lamp", "A lamp", ["Touch"]);
-    utils.CreateRoom("Lobby", "A hotel lobby stretches before you", ["Lamp"], null);
+    utils.CreateRoom("Lobby", "A hotel lobby stretches before you", ["Lamp"], ["Hallway"]);
+    utils.CreateRoom("Hallway", "The long hallway stretches before you", ["Lamp"], [null, "Lobby"]);
 };
 
 g.Engine.Start(template);
